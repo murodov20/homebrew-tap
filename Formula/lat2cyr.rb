@@ -1,6 +1,4 @@
 class Lat2cyr < Formula
-  include Language::Python::Virtualenv
-
   desc "O'zbek lotin→kirill real vaqtda transliteratsiya (macOS tray app)"
   homepage "https://github.com/murodov20/latin-cyrillic-converter-live"
   url "https://github.com/murodov20/latin-cyrillic-converter-live.git",
@@ -11,16 +9,21 @@ class Lat2cyr < Formula
   depends_on :macos
 
   def install
-    venv = virtualenv_create(libexec, "python3.12")
-    venv.pip_install "pynput>=1.7.6"
-    venv.pip_install "pystray>=0.19.5"
-    venv.pip_install "Pillow>=10.0.0"
+    python = Formula["python@3.12"].opt_bin/"python3.12"
+
+    # Virtual environment yaratish
+    venv = libexec
+    system python, "-m", "venv", venv
+    pip = venv/"bin/pip"
+
+    # Kutubxonalarni wheel sifatida o'rnatish
+    system pip, "install", "--prefer-binary", "pynput>=1.7.6", "pystray>=0.19.5", "Pillow>=10.0.0"
 
     # Dastur fayllarini ko'chirish
-    libexec_site = libexec/"lib/python3.12/site-packages"
+    site_packages = Dir[venv/"lib/python*/site-packages"].first
     %w[main.py backend_macos.py backend_pynput.py transliterator.py
        config_loader.py settings_window.py config.json VERSION].each do |f|
-      libexec_site.install f if File.exist?(f)
+      cp f, site_packages if File.exist?(f)
     end
 
     # Config faylni saqlash
@@ -35,7 +38,7 @@ class Lat2cyr < Formula
         cp "#{pkgshare}/config.json" "$CONFIG_DIR/config.json"
       fi
       export LAT2CYR_CONFIG="$CONFIG_DIR/config.json"
-      exec "#{libexec}/bin/python" "#{libexec_site}/main.py" "$@"
+      exec "#{venv}/bin/python" "#{site_packages}/main.py" "$@"
     EOS
     chmod 0755, bin/"lat2cyr"
   end
