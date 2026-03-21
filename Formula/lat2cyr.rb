@@ -2,7 +2,7 @@ class Lat2cyr < Formula
   desc "O'zbek lotin→kirill real vaqtda transliteratsiya (macOS tray app)"
   homepage "https://github.com/murodov20/latin-cyrillic-converter-live"
   url "https://github.com/murodov20/latin-cyrillic-converter-live.git",
-      tag: "v0.0.2"
+      tag: "v0.0.3"
   license "MIT"
 
   depends_on "python@3.12"
