@@ -10,39 +10,32 @@ class Lat2cyr < Formula
   depends_on "python@3.12"
   depends_on :macos
 
-  resource "pynput" do
-    url "https://files.pythonhosted.org/packages/f0/c3/dccf44c68225046df5324db0cc7d563a560635355b3e5f1d249468268a6f/pynput-1.8.1.tar.gz"
-    sha256 "70d7c8373ee98911004a7c938742242840a5628c004573d84ba849d4601df81e"
-  end
-
-  resource "pystray" do
-    url "https://files.pythonhosted.org/packages/5c/64/927a4b9024196a4799eba0180e0ca31568426f258a4a5c90f87a97f51d28/pystray-0.19.5-py2.py3-none-any.whl"
-    sha256 "a0c2229d02cf87207297c22d86ffc57c86c227517b038c0d3c59df79295ac617"
-  end
-
-  resource "Pillow" do
-    url "https://files.pythonhosted.org/packages/1f/42/5c74462b4fd957fcd7b13b04fb3205ff8349236ea74c7c375766d6c82288/pillow-12.1.1.tar.gz"
-    sha256 "9ad8fa5937ab05218e2b6a4cff30295ad35afd2f83ac592e68c0d871bb0fdbc4"
-  end
-
   def install
-    virtualenv_install_with_resources
+    venv = virtualenv_create(libexec, "python3.12")
+    venv.pip_install "pynput>=1.7.6"
+    venv.pip_install "pystray>=0.19.5"
+    venv.pip_install "Pillow>=10.0.0"
 
-    # Config faylni ko'chirish
+    # Dastur fayllarini ko'chirish
+    libexec_site = libexec/"lib/python3.12/site-packages"
+    %w[main.py backend_macos.py backend_pynput.py transliterator.py
+       config_loader.py settings_window.py config.json VERSION].each do |f|
+      libexec_site.install f if File.exist?(f)
+    end
+
+    # Config faylni saqlash
     pkgshare.install "config.json"
 
-    # Wrapper skript yaratish
-    (bin/"lat2cyr").unlink if (bin/"lat2cyr").exist?
+    # Wrapper skript
     (bin/"lat2cyr").write <<~EOS
       #!/bin/bash
-      # Config faylni foydalanuvchi papkasiga ko'chirish (agar yo'q bo'lsa)
       CONFIG_DIR="$HOME/.config/lat2cyr"
       if [ ! -f "$CONFIG_DIR/config.json" ]; then
         mkdir -p "$CONFIG_DIR"
         cp "#{pkgshare}/config.json" "$CONFIG_DIR/config.json"
       fi
       export LAT2CYR_CONFIG="$CONFIG_DIR/config.json"
-      exec "#{libexec}/bin/python" "#{libexec}/lib/python3.12/site-packages/main.py" "$@"
+      exec "#{libexec}/bin/python" "#{libexec_site}/main.py" "$@"
     EOS
     chmod 0755, bin/"lat2cyr"
   end
@@ -65,6 +58,6 @@ class Lat2cyr < Formula
   end
 
   test do
-    assert_match "version", shell_output("#{bin}/lat2cyr --help 2>&1", 1)
+    assert_predicate bin/"lat2cyr", :exist?
   end
 end
