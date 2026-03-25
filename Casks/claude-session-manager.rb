@@ -11,6 +11,11 @@ cask "claude-session-manager" do
 
   app "ClaudeSessionManager.app"
 
+  postflight do
+    system_command "/usr/bin/xattr",
+                   args: ["-rd", "com.apple.quarantine", "#{appdir}/ClaudeSessionManager.app"]
+  end
+
   zap trash: [
     "~/Library/Preferences/com.mmurodov.ClaudeSessionManager.plist",
   ]
